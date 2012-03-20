@@ -1,0 +1,29 @@
+JarExploder is a simple java class which enables packing of jar files and other files within
+a simple jar file which can be started with the -jar flag.
+
+To use the JarExploder, package all your project files and within a simple jar file. Place the
+JarExploder class in the jar-file root and mark it as the Main-Class in the jar MANIFEST. Specify
+your real main class in the MANIFEST as the Start-Class.
+
+For example:
+cms-system.jar/
++ se/
+  + softhouse/
+    + jar/
+      + JarExploder.class
++ lib/
+  + cms-system-20121231.jar
+  + apache-commons-1.0.jar
+  - other-3rd-party.jar
++ icons/
+  + ....
+  
+In the MANIFEST:
+Main-Class: se.softhouse.jar.JarExploder
+Start-Class: se.softhouse.cms.Start
+
+The jarexploder will uncompress all files in the jar and place it in a temporary folder in the file
+system. All .jar files will be added to the classpath and the Start-Class main method will be invoked.
+When the jvm exists, all temporary files will be deleted.
+
+To enable debugging printouts, add -DDEBUG=true to the command line argument.
