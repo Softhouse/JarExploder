@@ -27,3 +27,6 @@ system. All .jar files will be added to the classpath and the Start-Class main m
 When the jvm exists, all temporary files will be deleted.
 
 To enable debugging printouts, add -DDEBUG=true to the command line argument.
+
+The jarexploder can also be used to embedd a jarfile in another project. For instance if java is to be started
+as a service.

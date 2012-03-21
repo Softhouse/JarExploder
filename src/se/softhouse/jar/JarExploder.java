@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -159,6 +160,23 @@ public class JarExploder
 
 	private void run(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
+		Class<?> klass = getStartClass();
+		Method method = klass.getMethod("main", new Class<?>[]{args.getClass()});
+		try
+		{
+			method.invoke(null, (Object)args);
+			System.exit(0);
+		}
+		catch(Throwable t)
+		{
+			t.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	public <T> Class<T> getStartClass() throws IOException, MalformedURLException,
+			ClassNotFoundException
+	{
 		List<URL> jarFiles = new ArrayList<>();
 		
 		String classpath = System.getProperty("java.class.path");
@@ -166,8 +184,9 @@ public class JarExploder
 		
 		myTempDir = createTempDirectory();
 
-		// This file is always the first entry in the classpath
-		JarFile jarFile = new JarFile(classpath.split(File.pathSeparator)[0]);
+		// Find the jarFile with the exploder.
+		
+		JarFile jarFile = findJarFileInClassPath(classpath);
 		Enumeration<JarEntry> jarEntries = jarFile.entries();
 		while(jarEntries.hasMoreElements())
 		{
@@ -203,27 +222,37 @@ public class JarExploder
 			throw new IllegalArgumentException("Manifest must contain a Start-Class entry in the main part of the manifest");
 		}
 		INFO("Calling startup class [%s]", startClass);
-		Class<?> klass = Class.forName(startClass, true, classloader);
-		Method method = klass.getMethod("main", new Class<?>[]{args.getClass()});
-		try
-		{
-			method.invoke(null, (Object)args);
-			classloader = cleanupClassLoaderReferences(classloader);
-			System.exit(0);
-		}
-		catch(Throwable t)
-		{
-			t.printStackTrace();
-			classloader = cleanupClassLoaderReferences(classloader);
-			System.exit(-1);
-		}
+		@SuppressWarnings("unchecked") Class<T> klass = (Class<T>) Class.forName(startClass, true, classloader);
+		return klass;
 	}
 
-	private URLClassLoader cleanupClassLoaderReferences(URLClassLoader classloader) throws IOException
+	private JarFile findJarFileInClassPath(String classpath) throws IOException
 	{
-		classloader.close();
-		System.gc();
-		return null;
+		for(String file : classpath.split(File.pathSeparator))
+		{
+			if (file.endsWith(".jar") == false)
+			{
+				INFO("Skipping [%s]", file);
+				continue;
+			}
+			try(JarFile jarFile = new JarFile(file))
+			{
+				Enumeration<JarEntry> entries = jarFile.entries();
+				while(entries.hasMoreElements())
+				{
+					JarEntry entry = entries.nextElement();
+					if (entry.getName().endsWith("JarExploder.class"))
+					{
+						DEBUG("JarExploder found in [%s]", file);
+						return new JarFile(file);
+					}
+				}
+				DEBUG("JarExploder not found in [%s]", file);
+			}
+			
+		}
+		throw new IllegalStateException("Unable to find jar file with " + JarExploder.class.toString() + " in classpath ["+ classpath +"]");
+		
 	}
 
 	/**
