@@ -22,11 +22,11 @@ In the MANIFEST:
 Main-Class: se.softhouse.jar.JarExploder
 Start-Class: se.softhouse.cms.Start
 
-The jarexploder will uncompress all files in the jar and place it in a temporary folder in the file
+The JarExploder will uncompress all files in the jar and place it in a temporary folder in the file
 system. All .jar files will be added to the classpath and the Start-Class main method will be invoked.
 When the jvm exists, all temporary files will be deleted.
 
 To enable debugging printouts, add -DDEBUG=true to the command line argument.
 
-The jarexploder can also be used to embedd a jarfile in another project. For instance if java is to be started
+The JarExploder can also be used to embedd a jarfile in another project. For instance if java is to be started
 as a service.
